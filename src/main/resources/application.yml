@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: identity-service
   # 1. Banco de dados PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/usuario
@@ -11,17 +13,6 @@ spring:
       ddl-auto: update
     show-sql: true
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: meu-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-
   main:
     allow-bean-definition-overriding: true
     web-application-type: servlet
@@ -31,3 +22,22 @@ spring:
         jwt:
           issuer-uri: http://keycloak-service:8093/realms/master
           jwk-set-uri: http://keycloak-service:8093/realms/master/protocol/openid-connect/certs
+
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
+
+logging:
+  include-application-name: false
