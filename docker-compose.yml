@@ -22,6 +22,12 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     volumes:
       - ./data/jaeger:/badger # Persistência relativa para os traces coletados
+    networks:
+      - observability
 
 volumes:
   postgres_data:
+
+networks:
+  observability:
+    driver: bridge
