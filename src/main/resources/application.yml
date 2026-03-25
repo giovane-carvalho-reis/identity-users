@@ -25,6 +25,7 @@ server:
           issuer-uri: http://keycloak-service:8093/realms/master
           jwk-set-uri: http://keycloak-service:8093/realms/master/protocol/openid-connect/certs
 
+
 management:
   otlp:
     metrics:
