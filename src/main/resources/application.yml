@@ -1,6 +1,8 @@
 spring:
   application:
     name: identity-service
+server:
+  port: 9292
   # 1. Banco de dados PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/usuario
