@@ -32,4 +32,4 @@ volumes:
 
 networks:
   observability:
-    external: truev
+    external: true
