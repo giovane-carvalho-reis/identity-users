@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: meu-postgres
+    container_name: identity-postgres
     environment:
       POSTGRES_DB: usuario
       POSTGRES_USER: postgres
@@ -10,6 +10,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - observability
 
   jaeger:
     image: jaegertracing/all-in-one:latest
