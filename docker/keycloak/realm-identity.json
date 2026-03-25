@@ -1,0 +1,43 @@
+{
+  "realm": "identity",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Perfil padrão para usuários autenticados"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Perfil administrativo"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "identity-public-client",
+      "name": "Identity Public Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}
+

@@ -1,1 +1,1 @@
-rootProject.name = "identity"
+rootProject.name = "identity-users"

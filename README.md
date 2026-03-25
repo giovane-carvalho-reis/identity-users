@@ -1,39 +1,77 @@
-# Identity Service
+# Identity Users - Demo simples
 
-Servidor de identidade e gerenciamento de usuários de uma loja de livros virtual.
+Projeto de demo para cadastro de usuarios, geracao de token no Keycloak e validacao JWT entre microsservicos.
 
-## Tecnologias
-
-- Java 17 + Spring Boot 4.0.3
-- PostgreSQL 16
-- Keycloak (OAuth2 / JWT)
-- Swagger UI (SpringDoc 3.0.2)
-
----
-
-## Como Rodar
-
-### Suba o Docker (PostgreSQL + Keycloak)
-
-Suba os containers:
+## Subir ambiente
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
----
+## Links de acesso
 
-### Via Swagger
+- API: `http://localhost:9292`
+- Swagger (OpenAPI): `http://localhost:9292/swagger-ui.html`
+- Keycloak: `http://localhost:8093`
+- Realm issuer (JWT): `http://localhost:8093/realms/identity`
 
-```
-http://localhost:8080/swagger-ui.html
-```
+## Base de dados (PostgreSQL)
 
----
+- Host: `localhost`
+- Porta: `5432`
+- Usuario: `postgres`
+- Senha: `senha123`
+- Banco da aplicacao: `usuario`
+- Banco do Keycloak: `keycloak`
+
+String de conexao da aplicacao:
+
+`jdbc:postgresql://localhost:5432/usuario`
 
 ## Endpoints
 
-| Método | Endpoint    | Descrição                        |
-|--------|-------------|----------------------------------|
-| POST   | /usuarios   | Cadastra usuário (sem token)     |
-| GET    | /usuarios   | Lista usuários (requer token)    |
+- `POST /usuarios` - cadastra usuario no banco local e no Keycloak
+- `POST /auth/token` - gera access token no Keycloak
+- `GET /usuarios` - endpoint protegido (requer Bearer token)
+
+## cURL - Criar usuario
+
+```bash
+curl --request POST "http://localhost:9292/usuarios" \
+  --header "Content-Type: application/json" \
+  --data "{\
+	\"nome\": \"Giovane Carvalho Reis\",\
+	\"email\": \"giovane.reis@outlook.com\",\
+	\"cpf\": \"12345678901\",\
+	\"telefone\": \"11999999999\",\
+	\"senha\": \"Admin@123\",\
+	\"endereco\": {\
+	  \"cep\": \"01001000\",\
+	  \"logradouro\": \"Rua A\",\
+	  \"numero\": \"10\",\
+	  \"complemento\": \"\",\
+	  \"bairro\": \"Centro\",\
+	  \"cidade\": \"Sao Paulo\",\
+	  \"estado\": \"SP\"\
+	}\
+  }"
+```
+
+## cURL - Gerar token
+
+```bash
+curl --request POST "http://localhost:9292/auth/token" \
+  --header "Content-Type: application/json" \
+  --data "{\
+	\"username\": \"giovane.reis@outlook.com\",\
+	\"password\": \"Admin@123\"\
+  }"
+```
+
+## cURL - Listar usuarios (protegido)
+
+```bash
+curl --request GET "http://localhost:9292/usuarios" \
+  --header "Authorization: Bearer SEU_ACCESS_TOKEN"
+```
+

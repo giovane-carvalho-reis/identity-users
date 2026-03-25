@@ -3,33 +3,114 @@ services:
     image: postgres:16
     container_name: identity-postgres
     environment:
-      POSTGRES_DB: usuario
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: senha123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - observability
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: jaeger-identity
-    ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+  postgres-bootstrap:
+    image: postgres:16
+    container_name: identity-postgres-bootstrap
+    entrypoint:
+      - sh
+      - -c
+      - "psql -h postgres -U postgres -d postgres -c 'CREATE DATABASE keycloak' 2>/dev/null || true && psql -h postgres -U postgres -d postgres -c 'CREATE DATABASE usuario' 2>/dev/null || true && echo '[postgres-bootstrap] bancos prontos'"
     environment:
-      - COLLECTOR_OTLP_ENABLED=true
+      PGPASSWORD: senha123
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: identity-keycloak
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=http://localhost:8093
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: senha123
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+    ports:
+      - "8093:8080"
     volumes:
-      - ./data/jaeger:/badger # Persistência relativa para os traces coletados
-    networks:
-      - observability
+      - ./docker/keycloak:/opt/keycloak/data/import
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+    depends_on:
+      postgres-bootstrap:
+        condition: service_completed_successfully
+
+  keycloak-init:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: identity-keycloak-init
+    entrypoint: ["/bin/bash", "-c", "tr -d '\\r' < /opt/keycloak/data/import/init-admin-user.sh | bash"]
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_MASTER_REALM: master
+      KEYCLOAK_REALM: identity
+      KEYCLOAK_ADMIN_USER: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      INITIAL_ADMIN_USERNAME: giovane.reis@outlook.com
+      INITIAL_ADMIN_EMAIL: giovane.reis@outlook.com
+      INITIAL_ADMIN_FIRST_NAME: Giovane
+      INITIAL_ADMIN_LAST_NAME: Carvalho Reis
+      INITIAL_ADMIN_PASSWORD: Admin@123
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import
+    restart: on-failure
+    depends_on:
+      keycloak:
+        condition: service_started
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: identity-service
+    environment:
+      SERVER_PORT: 9292
+      DATABASE_URL: jdbc:postgresql://postgres:5432/usuario
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: senha123
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: identity
+      KEYCLOAK_ADMIN_REALM: master
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
+      KEYCLOAK_TOKEN_CLIENT_ID: identity-public-client
+      KEYCLOAK_ISSUER_URI: http://localhost:8093/realms/identity
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/identity/protocol/openid-connect/certs
+    ports:
+      - "9292:9292"
+    restart: on-failure
+    depends_on:
+      postgres-bootstrap:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_started
 
 volumes:
   postgres_data:
-
-networks:
-  observability:
-    external: true

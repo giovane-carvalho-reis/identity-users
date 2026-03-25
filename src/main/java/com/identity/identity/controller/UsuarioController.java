@@ -1,5 +1,6 @@
 package com.identity.identity.controller;
 
+import com.identity.identity.dto.CriarUsuarioRequest;
 import com.identity.identity.repository.UsuarioEntity;
 import com.identity.identity.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping
-    public ResponseEntity<UsuarioEntity> salvar(@RequestBody UsuarioEntity usuario) {
+    public ResponseEntity<UsuarioEntity> salvar(@RequestBody CriarUsuarioRequest usuario) {
         return ResponseEntity.ok(usuarioService.criarUsuario(usuario));
     }
 

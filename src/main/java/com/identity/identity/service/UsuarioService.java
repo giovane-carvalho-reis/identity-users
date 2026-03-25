@@ -1,5 +1,6 @@
 package com.identity.identity.service;
 
+import com.identity.identity.dto.CriarUsuarioRequest;
 import com.identity.identity.repository.UsuarioEntity;
 import com.identity.identity.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
@@ -13,10 +14,22 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final KeycloakService keycloakService;
 
     @Transactional
-    public UsuarioEntity criarUsuario(UsuarioEntity usuario) {
-        return usuarioRepository.save(usuario);
+    public UsuarioEntity criarUsuario(CriarUsuarioRequest usuario) {
+        String keycloakId = keycloakService.criarUsuario(usuario);
+        UsuarioEntity entity = UsuarioEntity.builder()
+                .nome(usuario.nome())
+                .email(usuario.email())
+                .cpf(usuario.cpf())
+                .telefone(usuario.telefone())
+                .endereco(usuario.endereco())
+                .ativo(Boolean.TRUE)
+                .keycloakId(keycloakId)
+                .build();
+
+        return usuarioRepository.save(entity);
     }
 
     @Transactional
