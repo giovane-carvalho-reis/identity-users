@@ -33,6 +33,7 @@ public class SecurityConfigFilter {
                                 ).permitAll()
                                 .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/token").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/auth/validate").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/usuarios/**").authenticated()
                                 .anyRequest().authenticated()
                 )
@@ -43,4 +44,3 @@ public class SecurityConfigFilter {
         return http.build();
     }
 }
-

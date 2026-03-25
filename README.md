@@ -32,7 +32,8 @@ String de conexao da aplicacao:
 
 - `POST /usuarios` - cadastra usuario no banco local e no Keycloak
 - `POST /auth/token` - gera access token no Keycloak
-- `GET /usuarios` - endpoint protegido (requer Bearer token)
+- `GET /auth/validate` - valida token JWT e retorna as claims (requer Bearer token)
+- `GET /usuarios` - lista usuarios (requer Bearer token)
 
 ## cURL - Criar usuario
 
@@ -68,10 +69,32 @@ curl --request POST "http://localhost:9292/auth/token" \
   }"
 ```
 
+## cURL - Validar token
+
+```bash
+curl --request GET "http://localhost:9292/auth/validate" \
+  --header "Authorization: Bearer SEU_ACCESS_TOKEN"
+```
+
+Resposta `200 OK` — token válido:
+
+```json
+{
+  "valid": true,
+  "subject": "a1b2c3d4-uuid-do-usuario-no-keycloak",
+  "username": "giovane.reis@outlook.com",
+  "email": "giovane.reis@outlook.com",
+  "roles": ["default-roles-identity", "offline_access", "USER", "ADMIN"],
+  "issued_at": "2026-03-25T16:50:00Z",
+  "expires_at": "2026-03-25T17:50:00Z"
+}
+```
+
+Resposta `401 Unauthorized` — token inválido, expirado ou ausente (Spring Security, sem chegar no método).
+
 ## cURL - Listar usuarios (protegido)
 
 ```bash
 curl --request GET "http://localhost:9292/usuarios" \
   --header "Authorization: Bearer SEU_ACCESS_TOKEN"
 ```
-
