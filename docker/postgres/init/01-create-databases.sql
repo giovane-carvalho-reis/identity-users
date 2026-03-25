@@ -1,3 +1,0 @@
-CREATE DATABASE usuario;
-CREATE DATABASE keycloak;
-

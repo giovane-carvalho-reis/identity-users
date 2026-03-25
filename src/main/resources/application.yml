@@ -2,7 +2,7 @@ spring:
   application:
     name: identity-service
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/usuario}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/postgres}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:senha123}
     driver-class-name: org.postgresql.Driver

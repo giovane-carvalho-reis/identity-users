@@ -7,8 +7,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
@@ -33,7 +31,8 @@ public class UsuarioService {
     }
 
     @Transactional
-    public List<UsuarioEntity> listarTodos() {
-        return usuarioRepository.findAll();
+    public UsuarioEntity buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
 }
