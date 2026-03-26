@@ -2,21 +2,57 @@
   "realm": "identity",
   "enabled": true,
   "registrationAllowed": false,
+  "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
+
+  "requiredActions": [
+    {
+      "alias": "VERIFY_PROFILE",
+      "name": "Verify Profile",
+      "providerId": "VERIFY_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 900,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    }
+  ],
+
   "roles": {
     "realm": [
-      {
-        "name": "USER",
-        "description": "Perfil padrão para usuários autenticados"
-      },
-      {
-        "name": "ADMIN",
-        "description": "Perfil administrativo"
-      }
+      { "name": "USER",  "description": "Perfil padrão para usuários autenticados" },
+      { "name": "ADMIN", "description": "Perfil administrativo" }
     ]
   },
+
   "clients": [
     {
       "clientId": "identity-public-client",
@@ -28,16 +64,8 @@
       "directAccessGrantsEnabled": true,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": [
-        "*"
-      ],
-      "webOrigins": [
-        "*"
-      ],
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      }
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
     }
   ]
 }
-

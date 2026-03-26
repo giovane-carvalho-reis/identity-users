@@ -22,6 +22,9 @@ public class UsuarioEntity {
     @Column(nullable = false)
     private String nome;
 
+    @Column
+    private String sobrenome;
+
     @Column(nullable = false, unique = true)
     private String email;
 

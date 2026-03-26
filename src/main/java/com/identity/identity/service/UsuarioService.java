@@ -19,6 +19,7 @@ public class UsuarioService {
         String keycloakId = keycloakService.criarUsuario(usuario);
         UsuarioEntity entity = UsuarioEntity.builder()
                 .nome(usuario.nome())
+                .sobrenome(usuario.sobrenome())
                 .email(usuario.email())
                 .cpf(usuario.cpf())
                 .telefone(usuario.telefone())

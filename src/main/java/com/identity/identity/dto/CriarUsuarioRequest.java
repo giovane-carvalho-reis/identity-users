@@ -5,6 +5,8 @@ import com.identity.identity.repository.Endereco;
 public record CriarUsuarioRequest(
         String nome,
 
+        String sobrenome,
+
         String email,
 
         String cpf,

@@ -20,10 +20,12 @@ public class SecurityConfigFilter {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers(
-                                        "/api/test",
                                         "/error",
                                         "/actuator/health",
                                         "/actuator/health/**",
+                                        "/actuator/info",
+                                        "/actuator/metrics",
+                                        "/actuator/metrics/**",
                                         "/v3/api-docs/**",
                                         "/v3/api-docs.yaml",
                                         "/swagger-ui/**",
@@ -34,6 +36,7 @@ public class SecurityConfigFilter {
                                 .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/auth/token").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/auth/validate").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/usuarios").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/usuarios/**").authenticated()
                                 .anyRequest().authenticated()
                 )

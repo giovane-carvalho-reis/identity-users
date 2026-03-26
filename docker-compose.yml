@@ -1,23 +1,48 @@
+# =============================================================================
+#  Identity Service — ambiente local / demo
+#  Subir tudo:  docker compose up --build
+#  Derrubar:    docker compose down -v
+# =============================================================================
+#
+#  Portas expostas
+#  ┌─────────────────────────────────────┬──────┐
+#  │ PostgreSQL                          │ 5432 │
+#  │ Keycloak (console: /admin)          │ 8093 │
+#  │ Identity Service (API)              │ 9292 │
+#  └─────────────────────────────────────┴──────┘
+#
+#  Credenciais Keycloak admin
+#    url:   http://localhost:8093
+#    user:  admin / admin123
+#    realm: identity  |  client: identity-public-client
+# =============================================================================
+
 services:
+
+  # ---------------------------------------------------------------------------
+  # Banco de dados
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16
     container_name: identity-postgres
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: identity
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: senha123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres && pg_isready -U postgres -d keycloak && pg_isready -U postgres -d usuario"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d identity"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 15s
 
+  # ---------------------------------------------------------------------------
+  # Keycloak — Identity Provider
+  # ---------------------------------------------------------------------------
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
     container_name: identity-keycloak
@@ -25,53 +50,48 @@ services:
       - start-dev
       - --import-realm
       - --hostname=http://localhost:8093
+      - --health-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_PORT: 5432
-      KC_DB_URL_DATABASE: keycloak
+      KC_DB_URL_DATABASE: identity
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: senha123
-      KC_HTTP_ENABLED: "true"
-      KC_HEALTH_ENABLED: "true"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
     ports:
       - "8093:8080"
     volumes:
       - ./docker/keycloak:/opt/keycloak/data/import
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 12
-      start_period: 60s
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      # /health/ready retorna 200 apenas quando o Keycloak terminou de subir
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
 
-  keycloak-init:
+  # ---------------------------------------------------------------------------
+  # keycloak-config — configurações pós-import (roda uma vez e sai)
+  # Usa script externo para evitar problemas de CRLF do Windows em YAML multiline.
+  # ---------------------------------------------------------------------------
+  keycloak-config:
     image: quay.io/keycloak/keycloak:26.1
-    container_name: identity-keycloak-init
-    entrypoint: ["/bin/bash", "-c", "tr -d '\\r' < /opt/keycloak/data/import/init-admin-user.sh | bash"]
-    environment:
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_MASTER_REALM: master
-      KEYCLOAK_REALM: identity
-      KEYCLOAK_ADMIN_USER: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
-      INITIAL_ADMIN_USERNAME: giovane.reis@outlook.com
-      INITIAL_ADMIN_EMAIL: giovane.reis@outlook.com
-      INITIAL_ADMIN_FIRST_NAME: Giovane
-      INITIAL_ADMIN_LAST_NAME: Carvalho Reis
-      INITIAL_ADMIN_PASSWORD: Admin@123
+    container_name: identity-keycloak-config
+    entrypoint: ["/bin/bash", "/scripts/keycloak-config.sh"]
     volumes:
-      - ./docker/keycloak:/opt/keycloak/data/import
-    restart: on-failure
+      - ./docker/keycloak:/scripts
     depends_on:
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
+  # ---------------------------------------------------------------------------
+  # Identity Service — API Spring Boot
+  # ---------------------------------------------------------------------------
   identity-service:
     build:
       context: .
@@ -79,16 +99,15 @@ services:
     container_name: identity-service
     environment:
       SERVER_PORT: 9292
-      DATABASE_URL: jdbc:postgresql://postgres:5432/postgres
+      DATABASE_URL: jdbc:postgresql://postgres:5432/identity
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: senha123
       KEYCLOAK_BASE_URL: http://keycloak:8080
-      KEYCLOAK_REALM: identity
-      KEYCLOAK_ADMIN_REALM: master
-      KEYCLOAK_ADMIN_USERNAME: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
       KEYCLOAK_ADMIN_CLIENT_ID: admin-cli
       KEYCLOAK_TOKEN_CLIENT_ID: identity-public-client
+      # issuer-uri = URL que o Keycloak grava no campo "iss" do JWT (definida pelo --hostname).
+      # Precisa ser idêntica ao "iss" do token para a validação passar.
+      # jwk-set-uri = URL interna usada para buscar as chaves públicas (dentro da rede Docker).
       KEYCLOAK_ISSUER_URI: http://localhost:8093/realms/identity
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/identity/protocol/openid-connect/certs
     ports:
@@ -98,7 +117,9 @@ services:
       postgres:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully  # user profile já está configurado
 
 volumes:
   postgres_data:
